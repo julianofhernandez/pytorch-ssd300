@@ -7,6 +7,9 @@ Simple Single Shot Multibox Detection (SSD object detection model) implementatio
 * More backbones (larger/smaller/better optimized).
 * Better handling of anchors.
 * Other changes as and when needed...
+* ***Links to the repository/repositories will be provided here:***
+  * ...
+
 
 ## References
 
