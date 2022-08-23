@@ -1,0 +1,9 @@
+# Python cache files.
+*__pycache__
+
+# Model files.
+*.pth
+*.pth.tar
+
+# Notebook Checkpoints.
+*.ipynb_checkpoints

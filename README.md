@@ -18,5 +18,3 @@ Simple Single Shot Multibox Detection (SSD object detection model) implementatio
 This work would never have been possible if not for the previous efforts by the following people/reposotories/codebase:
 
 * [sgrvinod](https://github.com/sgrvinod)/**[a-PyTorch-Tutorial-to-Object-Detection](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection)**.
-* # pytorch-ssd300
-# pytorch-ssd300
