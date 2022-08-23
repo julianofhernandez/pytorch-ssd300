@@ -10,6 +10,13 @@ Simple Single Shot Multibox Detection (SSD object detection model) implementatio
 * ***Links to the repository/repositories will be provided here:***
   * ...
 
+## Updated and Features
+
+- [ ] Add video inference script.
+- [ ] Make the training pipeline more streamlined.
+- [ ] Add mosaic augmentation.
+- [ ] Add more augmentations.
+
 
 ## References
 
