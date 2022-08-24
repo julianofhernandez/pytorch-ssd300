@@ -12,6 +12,8 @@ Simple Single Shot Multibox Detection (SSD object detection model) implementatio
 
 ## Updates
 
+**Find upcoming updated/features [here](https://github.com/sovit-123/pytorch-ssd300/blob/main/docs/updates.md).**
+
 ### Aug 24, 2022
 
 * Added the original SSD300 model with VGG16 backbone.
