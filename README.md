@@ -10,6 +10,11 @@ Simple Single Shot Multibox Detection (SSD object detection model) implementatio
 * ***Links to the repository/repositories will be provided here:***
   * ...
 
+## Library Versions
+
+* **Recommended PyTorch version: 1.12.0**. This may become the minimum version required when IMAGENET1KV2 weights get released for VGG16.
+* 
+
 ## Updates
 
 **Find upcoming updated/features [here](https://github.com/sovit-123/pytorch-ssd300/blob/main/docs/updates.md).**
