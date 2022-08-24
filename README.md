@@ -2,20 +2,19 @@
 
 
 
-Simple Single Shot Multibox Detection (SSD object detection model) implementation with VGG16 backbone trained on the Pascal VOC 2012 and 2007 dataset. Eventually, this will be extended to inlcude (to be a separate repository):
+Simple Single Shot Multibox Detection (SSD object detection model) implementation with VGG16 backbone trained on the Pascal VOC 2012 and 2007 dataset. Eventually, this will be extended to inlcude (to be a separate repository/repositories):
 
-* More backbones (larger/smaller/better optimized).
+* More backbones (larger/smaller/more optimized).
 * Better handling of anchors.
 * Other changes as and when needed...
 * ***Links to the repository/repositories will be provided here:***
   * ...
 
-## Updated and Features
+## Updates
 
-- [ ] Add video inference script.
-- [ ] Make the training pipeline more streamlined.
-- [ ] Add mosaic augmentation.
-- [ ] Add more augmentations.
+### Aug 24, 2022
+
+* Added the original SSD300 model with VGG16 backbone.
 
 
 ## References
