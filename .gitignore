@@ -5,5 +5,11 @@
 *.pth
 *.pth.tar
 
+# Directories.
+outputs/
+
 # Notebook Checkpoints.
 *.ipynb_checkpoints
+
+# Shell scripts.
+test.sh

@@ -7,9 +7,7 @@ import argparse
 from model import SSD300, MultiBoxLoss
 from datasets import (
     create_train_dataset, 
-    create_valid_dataset,
     create_train_loader,
-    create_valid_loader
 )
 from utils import (
     adjust_learning_rate, 

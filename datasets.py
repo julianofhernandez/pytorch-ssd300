@@ -166,6 +166,9 @@ class PascalVOCDataset(Dataset):
             boxes = torch.Tensor(sample['bboxes'])
             labels = torch.tensor(sample['labels'], dtype=torch.int64)
 
+        # The difficulty represented by '0' or '1' is a string. First,
+        # convert to intenger and then to Torch tensor.
+        diffculties = torch.tensor([int(diffculties[0])], dtype=torch.int)
         return image_resized, boxes, labels, diffculties
 
     def __len__(self):

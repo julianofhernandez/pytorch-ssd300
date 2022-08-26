@@ -1,6 +1,7 @@
 import albumentations as A
 
 from albumentations.pytorch import ToTensorV2
+from torchvision import transforms
 
 # Define the training tranforms
 def get_train_aug():
@@ -52,3 +53,16 @@ def get_valid_transform():
         'format': 'pascal_voc', 
         'label_fields': ['labels']
     })
+
+# Transforms.
+def detect_transform(image):
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((300, 300)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+    return transform(image)
