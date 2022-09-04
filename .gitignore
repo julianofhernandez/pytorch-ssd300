@@ -1,6 +1,9 @@
 # Python cache files.
 *__pycache__
 
+# Python files.
+val.py
+
 # Model files.
 *.pth
 *.pth.tar

@@ -49,7 +49,7 @@ class PascalVOCDataset(Dataset):
         self.image_paths = [] # Image to store proper image paths with extension.
         self.image_names_07 = [] # List to store image names for VOC 2007.
         self.image_names_12 = [] # List to store image names for VOC 2012.
-        self.image_names = [] # For test dataset.
+        self.image_names = [] 
         if self.is_train:
             with open(
                 os.path.join(data_folder, 'VOC2012', 'ImageSets', 'Main', 'trainval.txt'), 'r'
@@ -119,9 +119,10 @@ class PascalVOCDataset(Dataset):
         # Box coordinates for xml files are extracted and corrected for image size given.
         for member in root.findall('object'):
             # Map the current object name to `classes` list to get
-            # the label index and append to `labels` list.
-            labels.append(self.classes.index(member.find('name').text))
-            difficultues.append(member.find('difficult').text)
+            # the label index and append to `labels` list. +1 at the end as
+            # `background` will take indenx 0.
+            labels.append(self.classes.index(member.find('name').text)+1)
+            difficultues.append(int(member.find('difficult').text))
             
             # xmin = left corner x-coordinates
             xmin = int(member.find('bndbox').find('xmin').text)
@@ -164,11 +165,9 @@ class PascalVOCDataset(Dataset):
                                      labels=labels)
             image_resized = sample['image']
             boxes = torch.Tensor(sample['bboxes'])
-            labels = torch.tensor(sample['labels'], dtype=torch.int64)
+            labels = torch.tensor(sample['labels'])
 
-        # The difficulty represented by '0' or '1' is a string. First,
-        # convert to intenger and then to Torch tensor.
-        diffculties = torch.tensor([int(diffculties[0])], dtype=torch.int)
+        diffculties = torch.ByteTensor(diffculties)
         return image_resized, boxes, labels, diffculties
 
     def __len__(self):
