@@ -642,6 +642,8 @@ class MultiBoxLoss(nn.Module):
             label_for_each_prior[overlap_for_each_prior < self.threshold] = 0  # (8732).
 
             # Store.
+            # `true_classes[i]` has shape (8732), 
+            # each detection is assigned either 0 (background) or an object class.
             true_classes[i] = label_for_each_prior
 
             # Encode center-size object coordinates into the form we regressed predicted boxes to.
