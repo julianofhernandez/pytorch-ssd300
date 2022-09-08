@@ -3,6 +3,7 @@
 
 # Python files.
 val.py
+older_utils.py
 
 # Model files.
 *.pth
