@@ -139,8 +139,9 @@ def intersection_over_union(
     Returns:
         tensor: Intersection over union for all examples
     """
-
-    lower_bounds = torch.max(boxes_preds[:, :2].unsqueeze(1), boxes_labels[:, :2].unsqueeze(0))
+    boxes_preds1 = boxes_preds[:, :2].unsqueeze(1)
+    boxes_labels1 =boxes_labels[:, :2].unsqueeze(0)
+    lower_bounds = torch.max(boxes_preds1, boxes_labels1)
     upper_bounds = torch.min(boxes_preds[:, 2:].unsqueeze(1), boxes_labels[:, 2:].unsqueeze(0))
     intersection_dims = torch.clamp(upper_bounds - lower_bounds, min=0)
     intersection =  intersection_dims[:, :, 0] * intersection_dims[:, :, 1]

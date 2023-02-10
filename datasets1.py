@@ -93,10 +93,14 @@ class PascalVOCDataset(Dataset):
         image_width = image.shape[1]
         image_height = image.shape[0]
 
+        boxes = []
+        orig_boxes = []
+        labels = []
+
         # Get the bounding boxes and categories for each object in the image
-        orig_boxes = [ann['bbox'] for ann in annotations]
+        [orig_boxes.append(ann['bbox']) for ann in annotations]
         #! To narrow the categories later add some extra code here
-        labels = [ann['category_id']+1 for ann in annotations]
+        [labels.append(ann['category_id']+1) for ann in annotations]
 
         # Convert the bbox format from [x, y, width, height] to [x1, y1, x2, y2]
         orig_boxes = [[b[0], b[1], b[0]+b[2], b[1]+b[3]] for b in orig_boxes]
@@ -114,6 +118,7 @@ class PascalVOCDataset(Dataset):
         return image, image_resized, orig_boxes, boxes, labels, difficultues
     
     def __getitem__(self, idx):
+        print("image index" + str(idx))
         image, image_resized, orig_boxes, boxes, labels, diffculties = \
             self.load_image_and_labels(index=idx)
 
@@ -139,79 +144,6 @@ class PascalVOCDataset(Dataset):
 
     def __len__(self):
         return len(self.image_ids)
-
-class TACODataset(Dataset):
-    def __init__(self, root_dir, annotations_file='annotations.json', transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-        
-        # Open annotations file
-        with open(os.path.join(root_dir, annotations_file), 'r') as f:
-            self.annotations = json.load(f)
-        # Create images list
-        self.image_ids = [image['id'] for image in self.annotations['images']]
-        self.image_filepaths = [os.path.join(root_dir, image['file_name']) for image in self.annotations['images']]
-        # Create classes list
-        self.classes = [category['name'] for category in self.annotations['categories']]
-        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
-    
-    def __len__(self):
-        return len(self.image_ids)
-    
-    def __getitem__(self, idx):
-        image_id = int(self.image_ids[idx])
-        image_path = self.image_filepaths[image_id]
-
-        #image = Image.open(image_path).convert('RGB')
-        image = cv2.imread(image_path)
-        # Convert BGR to RGB color format and resize
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-        image_resized = cv2.resize(image, (300,300))
-
-        # Extract the corresponding annotations
-        annotations = [ann for ann in self.annotations['annotations'] if int(ann['image_id']) == image_id]
-
-        # Get the bounding boxes and categories for each object in the image
-        boxes = [ann['bbox'] for ann in annotations]
-        #! To narrow the categories later add some extra code here
-        category_ids = [ann['category_id'] for ann in annotations]
-
-        # Convert the bbox format from [x, y, width, height] to [x1, y1, x2, y2]
-        boxes = [[b[0], b[1], b[0]+b[2], b[1]+b[3]] for b in boxes]
-        
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        category_ids = torch.as_tensor(category_ids, dtype=torch.int64)
-        
-        train_aug = get_train_aug()
-        sample = train_aug(image=image_resized,
-                            bboxes=boxes,
-                            labels=category_ids)
-        image_resized = sample['image']
-        boxes = torch.Tensor(sample['bboxes'])
-        labels = torch.Tensor(sample['labels'])
-
-        return image_resized, boxes, labels
-    
-    def display_random_image(self):
-        # choose a random image
-        index = random.randint(0, len(self) - 1)
-        image, boxes, category_ids = self[index]
-
-        # convert the tensor to a numpy array and transpose the axes
-        image_reversed = transforms.Compose([
-            #transforms.Normalize([0, 0, 0], [1/0.229, 1/0.224, 1/0.225]),
-            transforms.ToPILImage(),
-        ])(image)
-
-        # display the image
-        fig, ax = plt.subplots(1)
-        ax.imshow(image_reversed)
-        ax.axis('off')
-        plt.show()
-        print("---------------")
-        print(boxes)
-        print("---------------")
-        print(category_ids)
 
 def collate_fn(batch):
     """

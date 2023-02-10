@@ -187,6 +187,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
         boxes = [b.to(device) for b in boxes]
         labels = [l.to(device) for l in labels]
 
+        # print('boxes:' + str(boxes))
+        # print('labels:' + str(labels))
+
         # Forward prop.
         predicted_locs, predicted_scores = model(images)  # (N, 8732, 4), (N, 8732, n_classes)
 

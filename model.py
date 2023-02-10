@@ -607,6 +607,9 @@ class MultiBoxLoss(nn.Module):
         for i in range(batch_size):
             n_objects = boxes[i].size(0) # Number of objects in the detection.
 
+            if n_objects == 0:
+                continue
+
             overlap = intersection_over_union(
                 boxes[i],
                 self.priors_xy,
