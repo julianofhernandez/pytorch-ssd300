@@ -5,7 +5,7 @@ import torch.utils.data
 import argparse
 
 from model import SSD300, MultiBoxLoss
-from datasets import (
+from datasets1 import (
     create_train_dataset, 
     create_train_loader,
 )
@@ -20,7 +20,7 @@ from utils import (
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '-b', '--batch-size', dest='batch_size', default=8,
+    '-b', '--batch-size', dest='batch_size', default=1,
     type=int, help='batch size for training and validation'
 )
 parser.add_argument(
@@ -50,8 +50,9 @@ parser.add_argument(
 args = vars(parser.parse_args())
 
 # Data parameters
-data_folder = args['data_dir']  # folder with data files
-keep_difficult = True  # use objects considered difficult to detect?
+# data_folder = args['data_dir']  # folder with data files
+data_folder = 'C:\\Users\\julian\\repos\\TACO\\data'
+keep_difficult = False  # use objects considered difficult to detect?
 
 # Model parameters
 # Not too many here since the SSD300 has a very specific structure
@@ -127,6 +128,7 @@ def main():
         use_train_aug=False,
         classes=list(classes)
     )
+    print(f'Training dataset has {len(train_dataset)} images')
     train_loader = create_train_loader(
         train_dataset=train_dataset,
         batch_size=batch_size,

@@ -59,6 +59,7 @@ test_dataset = create_valid_dataset(
     use_train_aug=False,
     classes=list(classes),
 )
+print(f'Validation dataset has {len(test_dataset)} images')
 test_loader = create_valid_loader(
     valid_dataset=test_dataset,
     batch_size=batch_size,
