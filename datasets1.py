@@ -19,6 +19,14 @@ import random
 from PIL import Image
 import matplotlib.pyplot as plt
 
+def checkBetween1and0(bboxValue):
+    if bboxValue < 1 and bboxValue > 0:
+        return bboxValue
+    if bboxValue > 1:
+        return 1
+    elif bboxValue < 0:
+        return 0
+
 class PascalVOCDataset(Dataset):
     """
     A Custom PyTorch Dataset class to load Pascal VOC dataset.
@@ -106,19 +114,33 @@ class PascalVOCDataset(Dataset):
         orig_boxes = [[b[0], b[1], b[0]+b[2], b[1]+b[3]] for b in orig_boxes]
         
         boxes = []
+        # Convert BBOX values to be between 0 and 1
         for box in orig_boxes:
             xmin_final = ((box[0]/image_width)*self.width) / self.width
             xmax_final = ((box[2]/image_width)*self.width) / self.width
-            ymin_final = ((box[1]/image_height)*self.height) / self.height
+            ymin_final = ((box[1]/image_height)*self.height) /self.height
             ymax_final = ((box[3]/image_height)*self.height) /self.height
 
+            xmin_final = checkBetween1and0(xmin_final)
+            xmax_final = checkBetween1and0(xmax_final)
+            ymin_final = checkBetween1and0(ymin_final)
+            ymax_final = checkBetween1and0(ymax_final)
+
+            if xmin_final < 0.0 or xmin_final > 1.0 or \
+                ymin_final < 0.0 or ymin_final > 1.0 or \
+                xmax_final < 0.0 or xmax_final > 1.0 or \
+                ymax_final < 0.0 or ymax_final > 1.0:
+                raise ValueError(f"Bounding box values for sample at index {index} are outside of the expected\n \
+                range [0.0, 1.0]: ({xmin_final}, {ymin_final}, {xmax_final}, {ymax_final})\n\
+                Width: {image_width}; height: {image_height}\
+                Original BBOX: ({box[0]}, {box[1]}, {box[2]}, {box[3]})")
             boxes.append([xmin_final, ymin_final, xmax_final, ymax_final])
         difficultues = 1
 
         return image, image_resized, orig_boxes, boxes, labels, difficultues
     
     def __getitem__(self, idx):
-        print("image index" + str(idx))
+        print("image index: " + str(idx))
         image, image_resized, orig_boxes, boxes, labels, diffculties = \
             self.load_image_and_labels(index=idx)
 
