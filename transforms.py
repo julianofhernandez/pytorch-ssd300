@@ -26,7 +26,7 @@ def get_train_aug():
         ),
         ToTensorV2(p=1.0),
     ], bbox_params={
-        'format': 'pascal_voc',
+        'format': 'coco',
         'label_fields': ['labels']
     })
 
@@ -38,7 +38,7 @@ def get_train_transform():
         ),
         ToTensorV2(p=1.0),
     ], bbox_params={
-        'format': 'pascal_voc',
+        'format': 'coco',
         'label_fields': ['labels']
     })
 
@@ -50,7 +50,7 @@ def get_valid_transform():
         ),
         ToTensorV2(p=1.0),
     ], bbox_params={
-        'format': 'pascal_voc', 
+        'format': 'coco', 
         'label_fields': ['labels']
     })
 

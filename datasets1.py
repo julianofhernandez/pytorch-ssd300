@@ -20,12 +20,14 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 def checkBetween1and0(bboxValue):
-    if bboxValue < 1 and bboxValue > 0:
+    if bboxValue < 1.0 and bboxValue > 0.0:
         return bboxValue
-    if bboxValue > 1:
-        return 1
-    elif bboxValue < 0:
-        return 0
+    elif bboxValue >= 1.0:
+        return 1.0
+    elif bboxValue <= 0.0:
+        return 0.0
+    else:
+        return 6969.6969
 
 class PascalVOCDataset(Dataset):
     """
@@ -118,22 +120,22 @@ class PascalVOCDataset(Dataset):
         for box in orig_boxes:
             xmin_final = ((box[0]/image_width)*self.width) / self.width
             xmax_final = ((box[2]/image_width)*self.width) / self.width
-            ymin_final = ((box[1]/image_height)*self.height) /self.height
-            ymax_final = ((box[3]/image_height)*self.height) /self.height
+            ymin_final = ((box[1]/image_height)*self.height) / self.height
+            ymax_final = ((box[3]/image_height)*self.height) / self.height
 
             xmin_final = checkBetween1and0(xmin_final)
             xmax_final = checkBetween1and0(xmax_final)
             ymin_final = checkBetween1and0(ymin_final)
             ymax_final = checkBetween1and0(ymax_final)
 
-            if xmin_final < 0.0 or xmin_final > 1.0 or \
-                ymin_final < 0.0 or ymin_final > 1.0 or \
-                xmax_final < 0.0 or xmax_final > 1.0 or \
-                ymax_final < 0.0 or ymax_final > 1.0:
-                raise ValueError(f"Bounding box values for sample at index {index} are outside of the expected\n \
-                range [0.0, 1.0]: ({xmin_final}, {ymin_final}, {xmax_final}, {ymax_final})\n\
-                Width: {image_width}; height: {image_height}\
-                Original BBOX: ({box[0]}, {box[1]}, {box[2]}, {box[3]})")
+            # if xmin_final < 0.0 or xmin_final > 1.0 or \
+            #     ymin_final < 0.0 or ymin_final > 1.0 or \
+            #     xmax_final < 0.0 or xmax_final > 1.0 or \
+            #     ymax_final < 0.0 or ymax_final > 1.0:
+            #     raise ValueError(f"Bounding box values for sample at index {index} are outside of the expected\n \
+            #     range [0.0, 1.0]: ({xmin_final}, {ymin_final}, {xmax_final}, {ymax_final})\n\
+            #     Width: {image_width}; height: {image_height}\
+            #     Original BBOX: ({box[0]}, {box[1]}, {box[2]}, {box[3]})")
             boxes.append([xmin_final, ymin_final, xmax_final, ymax_final])
         difficultues = 1
 
@@ -148,15 +150,15 @@ class PascalVOCDataset(Dataset):
             
             train_aug = get_train_aug()
             sample = train_aug(image=image_resized,
-                                     bboxes=boxes,
-                                     labels=labels)
+                                    bboxes=boxes,
+                                    labels=labels)
             image_resized = sample['image']
             boxes = torch.Tensor(sample['bboxes'])
             labels = torch.Tensor(sample['labels'])
         else:
             sample = self.transforms(image=image_resized,
-                                     bboxes=boxes,
-                                     labels=labels)
+                                    bboxes=boxes,
+                                    labels=labels)
             image_resized = sample['image']
             boxes = torch.Tensor(sample['bboxes'])
             labels = torch.tensor(sample['labels'])
@@ -242,7 +244,7 @@ def create_train_loader(train_dataset, batch_size, num_workers=0):
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
         collate_fn=collate_fn
     )
