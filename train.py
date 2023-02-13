@@ -1,3 +1,4 @@
+import os
 import time
 import torch.backends.cudnn as cudnn
 import torch.optim
@@ -5,7 +6,7 @@ import torch.utils.data
 import argparse
 
 from model import SSD300, MultiBoxLoss
-from datasets1 import (
+from datasets import (
     create_train_dataset, 
     create_train_loader,
 )
@@ -44,14 +45,13 @@ parser.add_argument(
     help='path to trained checkpoint (trained on Pascal VOC)'
 )
 parser.add_argument(
-    '-d', '-data-dir', dest='data_dir', default='VOCdevkit',
+    '-d', '--data-dir', dest='data_dir', default='TACO',
     help='path to the VOCdevkit directory'
 )
 args = vars(parser.parse_args())
 
 # Data parameters
-# data_folder = args['data_dir']  # folder with data files
-data_folder = 'C:\\Users\\julian\\repos\\TACO\\data'
+data_folder = os.path.abspath(args['data_dir'])
 keep_difficult = False  # use objects considered difficult to detect?
 
 # Model parameters
@@ -186,9 +186,6 @@ def train(train_loader, model, criterion, optimizer, epoch):
         images = images.to(device)  # (batch_size (N), 3, 300, 300)
         boxes = [b.to(device) for b in boxes]
         labels = [l.to(device) for l in labels]
-
-        # print('boxes:' + str(boxes))
-        # print('labels:' + str(labels))
 
         # Forward prop.
         predicted_locs, predicted_scores = model(images)  # (N, 8732, 4), (N, 8732, n_classes)

@@ -7,14 +7,27 @@ from torch.utils.data import DataLoader, Dataset
 from xml.etree import ElementTree as et
 from transforms import get_train_aug, get_train_transform, get_valid_transform
 
-class PascalVOCDataset(Dataset):
+import json
+import subprocess
+import torch
+
+from torch.utils.data import Dataset
+from torchvision import transforms
+from matplotlib.patches import Rectangle
+
+import random
+from PIL import Image
+import matplotlib.pyplot as plt
+
+
+class TACO(Dataset):
     """
-    A Custom PyTorch Dataset class to load Pascal VOC dataset.
+    A Custom PyTorch Dataset class to load TACO dataset.
     """
 
     def __init__(
         self, 
-        data_folder='VOCdevkit', 
+        data_folder='TACO', 
         train=False, 
         keep_difficult=False,
         width=300,
@@ -24,7 +37,7 @@ class PascalVOCDataset(Dataset):
         classes=None
     ):
         """
-        :param data_folder: Path to the `VOCdevkit` folder.
+        :param data_folder: Path to the TACO repository folder.
         :param train: Boolean, wheter to prepare data for training set. If 
             False, then prepare for validation set. The augmentations will be 
             applied accordingly.
@@ -47,103 +60,93 @@ class PascalVOCDataset(Dataset):
         self.classes = classes
 
         self.image_paths = [] # Image to store proper image paths with extension.
-        self.image_names_07 = [] # List to store image names for VOC 2007.
-        self.image_names_12 = [] # List to store image names for VOC 2012.
         self.image_names = [] 
+        self.root_dir = os.path.join(data_folder, 'data')
+
+        self.download(data_folder)
+        self.split(data_folder)
+        
+        # Open annotations file
         if self.is_train:
-            with open(
-                os.path.join(data_folder, 'VOC2012', 'ImageSets', 'Main', 'trainval.txt'), 'r'
-            ) as f:
-                self.image_names_07.extend(f.readlines())
-                # Populate the proper image paths into the 
-                # `image_paths` list.
-                for name in self.image_names_07:
-                    name = name.strip('\n')
-                    self.image_paths.append(os.path.join(
-                        data_folder, 'VOC2012', 'JPEGImages', name+'.jpg'
-                    ))
-            with open(
-                os.path.join(data_folder, 'VOC2007', 'ImageSets', 'Main', 'trainval.txt'), 'r'
-            ) as f:
-                self.image_names_12.extend(f.readlines()) 
-                # Populate the proper image paths into the 
-                # `image_paths` list.
-                for name in self.image_names_12:
-                    name = name.strip('\n')
-                    self.image_paths.append(os.path.join(
-                        data_folder, 'VOC2007', 'JPEGImages', name+'.jpg'
-                    ))
-            self.image_names.extend(self.image_names_07)
-            self.image_names.extend(self.image_names_12)
+            with open(os.path.join(self.root_dir, 'annotations_0_train.json'), 'r') as f:
+                self.annotations = json.load(f)
         else:
-            with open(
-                os.path.join(data_folder, 'VOC2007', 'ImageSets', 'Main', 'test.txt'), 'r'
-            ) as f:
-                self.image_names.extend(f.readlines()) 
-                # Populate the proper image paths into the 
-                # `image_paths` list.
-                for name in self.image_names:
-                    name = name.strip('\n')
-                    self.image_paths.append(os.path.join(
-                        data_folder, 'VOC2007', 'JPEGImages', name+'.jpg'
-                    ))
+            with open(os.path.join(self.root_dir, 'annotations_0_val.json'), 'r') as f:
+                self.annotations = json.load(f)
+        # Create images list
+        self.image_ids = [image['id'] for image in self.annotations['images']]
+        self.image_filepaths = [os.path.join(self.root_dir, image['file_name']) for image in self.annotations['images']]
+        self.width_height = [(image['width'], image['height']) for image in self.annotations['images']]
+        print(self.width_height)
+        # Create classes list
+        self.classes = [category['name'] for category in self.annotations['categories']]
+        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
+
+    def download(self, dataset_dir):
+        dataset_url = "https://github.com/pedropro/TACO.git"
+        if not os.path.exists(dataset_dir):
+            os.system(f"git clone {dataset_url} {dataset_dir}")
+        
+        download_script = os.path.join(dataset_dir, "download.py")
+        annotations_file = os.path.join(dataset_dir, "data", "annotations.json")
+        subprocess.run(["python", download_script, '--dataset_path', annotations_file], check=True)
+        download_check = os.path.join(dataset_dir, 'data', 'batch_1', '000001.jpg')
+        if not os.path.exists(download_check):
+            raise Exception(f"TACO download failed, try rerunning {download_script}")
+
+    def round_0_to_1(self, val):
+        if val >= 0 and val <= 1:
+            return val
+        elif val < 0:
+            return 0
+        elif val > 1:
+            return 1
+        else:
+            return 696969696969
+
+    def split(self, dataset_dir):        
+        # Split training and validation datasets
+        split_script = os.path.join(dataset_dir, "detector", "split_dataset.py")
+        subprocess.run(["python", split_script, "--dataset_dir", os.path.join(dataset_dir, "data")], check=True)
+        split_check = os.path.join(dataset_dir, 'data', 'annotations_0_train.json')
+        if not os.path.exists(split_check):
+            raise Exception(f"Split failed, try rerunning {split_check}")
 
     def load_image_and_labels(self, index):
-        image_name = self.image_names[index]
-        image_name = image_name.strip('\n')
-        image_path = self.image_paths[index]
-        # Get either `VOC2007` or `VOC2012`
-        year_dir = image_path.split(os.path.sep)[-3]
-
+        image_path = self.image_filepaths[index]
         image = cv2.imread(image_path)
         # Convert BGR to RGB color format and resize
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
         image_resized = cv2.resize(image, (self.width, self.height))
 
-        # Capture the corresponding XML file for getting the annotations.
-        annot_file_path = os.path.join(
-            self.data_folder, year_dir, 'Annotations', image_name+'.xml'
-        )
+        # Extract the corresponding annotations
+        annotations = [ann for ann in self.annotations['annotations'] if int(ann['image_id']) == index]
 
-        boxes = []
-        orig_boxes = []
-        labels = []
-        difficultues = []
-        tree = et.parse(annot_file_path)
-        root = tree.getroot()
-
-        # Get the original height and width of the image.
         image_width = image.shape[1]
         image_height = image.shape[0]
 
-        # Box coordinates for xml files are extracted and corrected for image size given.
-        for member in root.findall('object'):
-            # Map the current object name to `classes` list to get
-            # the label index and append to `labels` list. +1 at the end as
-            # `background` will take indenx 0.
-            labels.append(self.classes.index(member.find('name').text)+1)
-            difficultues.append(int(member.find('difficult').text))
-            
-            # xmin = left corner x-coordinates
-            xmin = int(member.find('bndbox').find('xmin').text)
-            # xmax = right corner x-coordinates
-            xmax = int(member.find('bndbox').find('xmax').text)
-            # ymin = left corner y-coordinates
-            ymin = int(member.find('bndbox').find('ymin').text)
-            # ymax = right corner y-coordinates
-            ymax = int(member.find('bndbox').find('ymax').text)
+        # Get the bounding boxes and categories for each object in the image
+        orig_boxes = [ann['bbox'] for ann in annotations]
+        #! To narrow the categories later add some extra code here
+        labels = [ann['category_id']+1 for ann in annotations]
 
-            # Bounding box coordinates without being resized.
-            orig_boxes.append([xmin, ymin, xmax, ymax])
+        # Convert the bbox format from [x, y, width, height] to [x1, y1, x2, y2]
+        orig_boxes = [[b[0], b[1], b[0]+b[2], b[1]+b[3]] for b in orig_boxes]
+        
+        boxes = []
+        for box in orig_boxes:
+            xmin_final = ((box[0]/image_width)*self.width) / self.width
+            xmax_final = ((box[2]/image_width)*self.width) / self.width
+            ymin_final = ((box[1]/image_height)*self.height) / self.height
+            ymax_final = ((box[3]/image_height)*self.height) /self.height
 
-            # Resize the bounding boxes according to the
-            # desired `width`, `height`.
-            xmin_final = ((xmin/image_width)*self.width) / self.width
-            xmax_final = ((xmax/image_width)*self.width) / self.width
-            ymin_final = ((ymin/image_height)*self.height) / self.height
-            ymax_final = ((ymax/image_height)*self.height) /self.height
-            
+            xmax_final = self.round_0_to_1(xmax_final)
+            ymin_final = self.round_0_to_1(ymin_final)
+            ymax_final = self.round_0_to_1(ymax_final)
+            xmin_final = self.round_0_to_1(xmin_final)
+
             boxes.append([xmin_final, ymin_final, xmax_final, ymax_final])
+        difficultues = 1
 
         return image, image_resized, orig_boxes, boxes, labels, difficultues
     
@@ -152,6 +155,7 @@ class PascalVOCDataset(Dataset):
             self.load_image_and_labels(index=idx)
 
         if self.use_train_aug:
+            
             train_aug = get_train_aug()
             sample = train_aug(image=image_resized,
                                      bboxes=boxes,
@@ -171,7 +175,8 @@ class PascalVOCDataset(Dataset):
         return image_resized, boxes, labels, diffculties
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.image_ids)
+
 
 def collate_fn(batch):
     """
@@ -209,7 +214,7 @@ def create_train_dataset(
     use_train_aug=False,
     classes=None
 ):
-    train_dataset = PascalVOCDataset(
+    train_dataset = TACO(
         data_folder,
         train=train,
         keep_difficult=keep_difficult,
@@ -230,7 +235,7 @@ def create_valid_dataset(
     use_train_aug=False,
     classes=None
 ):
-    valid_dataset = PascalVOCDataset(
+    valid_dataset = TACO(
         data_folder,
         train=train,
         keep_difficult=keep_difficult,
