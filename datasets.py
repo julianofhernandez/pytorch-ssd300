@@ -86,13 +86,24 @@ class TACO(Dataset):
         dataset_url = "https://github.com/pedropro/TACO.git"
         if not os.path.exists(dataset_dir):
             os.system(f"git clone {dataset_url} {dataset_dir}")
-        
         download_script = os.path.join(dataset_dir, "download.py")
         annotations_file = os.path.join(dataset_dir, "data", "annotations.json")
-        subprocess.run(["python", download_script, '--dataset_path', annotations_file], check=True)
+        try:
+            subprocess.run(["python", download_script, '--dataset_path', annotations_file], check=True)
+        except subprocess.CalledProcessError as e:
+            if e.returncode != 2:
+                raise Exception("Download script returned a returncode that's not expected")
         download_check = os.path.join(dataset_dir, 'data', 'batch_1', '000001.jpg')
         if not os.path.exists(download_check):
             raise Exception(f"TACO download failed, try rerunning {download_script}")
+
+    def split(self, dataset_dir):        
+        # Split training and validation datasets
+        split_script = os.path.join(dataset_dir, "detector", "split_dataset.py")
+        subprocess.run(["python", split_script, "--dataset_dir", os.path.join(dataset_dir, "data")], check=True)
+        split_check = os.path.join(dataset_dir, 'data', 'annotations_0_train.json')
+        if not os.path.exists(split_check):
+            raise Exception(f"Split failed, try rerunning {split_check}")
 
     def round_0_to_1(self, val):
         if val >= 0 and val <= 1:
@@ -103,14 +114,6 @@ class TACO(Dataset):
             return 1
         else:
             return 696969696969
-
-    def split(self, dataset_dir):        
-        # Split training and validation datasets
-        split_script = os.path.join(dataset_dir, "detector", "split_dataset.py")
-        subprocess.run(["python", split_script, "--dataset_dir", os.path.join(dataset_dir, "data")], check=True)
-        split_check = os.path.join(dataset_dir, 'data', 'annotations_0_train.json')
-        if not os.path.exists(split_check):
-            raise Exception(f"Split failed, try rerunning {split_check}")
 
     def load_image_and_labels(self, index):
         image_path = self.image_filepaths[index]
